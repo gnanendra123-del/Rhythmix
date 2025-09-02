@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythmix - Premium Music Discovery</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #3a8dde 0%, #005eff 100%);
+            --secondary-gradient: linear-gradient(135deg, #6fb1fc 0%, #4364f7 100%);
+            --success-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            --light-bg: linear-gradient(135deg, #ffffff 0%, #e6f2ff 100%); /* white-blue background */
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #0a0a0f;
+            --text-secondary: #1a1a44;
+            --text-muted: #555577;
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            --shadow-xl: 0 35px 70px -15px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--light-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--success-gradient);
+            border-radius: 2px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            font-weight: 400;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.5s forwards;
+        }
+
+        .search-container {
+            margin-bottom: 60px;
+            animation: fadeInUp 1s ease-out 0.3s both;
+            position: relative; /* Added for suggestions dropdown positioning */
+        }
+
+        .search-form {
+            display: flex;
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 20px 28px;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            outline: none;
+            background: transparent;
+            color: var(--text-primary);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .search-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 20px 32px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+
+        .loading.show {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top: 3px solid #005eff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 24px;
+        }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 700px;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 0 0 24px 24px;
+            box-shadow: var(--shadow-lg);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none; /* Initially hidden */
+            margin-top: 10px;
+        }
+        
+        .suggestions-list.show {
+            display: block;
+        }
+        
+        .suggestion-item {
+            padding: 12px 28px;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: background-color 0.2s ease;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #f0f8ff;
+        }
+
+        .results-container {
+            margin-top: 40px;
+        }
+
+        .song-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+        }
+
+        .song-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .song-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 16px;
+            margin-right: 24px;
+            object-fit: cover;
+            background: #e6f2ff;
+        }
+
+        .song-details {
+            flex: 1;
+        }
+        
+        .song-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .song-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .song-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .song-meta span {
+            background: #f0f8ff;
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .play-btn {
+            background: var(--success-gradient);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .audio-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            backdrop-filter: blur(30px);
+            border-top: 1px solid var(--glass-border);
+            padding: 20px;
+            display: none;
+            align-items: center;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        .audio-player.show {
+            display: flex;
+        }
+
+        .player-info {
+            flex: 1;
+        }
+        
+        .player-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .player-artist {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .close-player {
+            background: #f0f8ff;
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .close-player:hover {
+            background: #cce4ff;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scaleX(1); }
+            50% { opacity: 0.7; transform: scaleX(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Rhythmix</h1>
+            <p>Discover music that moves your soul</p>
+        </div>
+
+        <div class="search-container">
+            <form method="POST" class="search-form" id="searchForm">
+                <input type="text" name="query" class="search-input" 
+                        placeholder="Search for songs, artists, albums..." 
+                        required value="{{ query }}" id="searchInput" autocomplete="off">
+                <button type="submit" class="search-btn" id="searchBtn">Search</button>
+            </form>
+            <div class="suggestions-list" id="suggestions"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Discovering amazing music...</p>
+        </div>
+        
+        {% if results is not none and results|length > 0 %}
+            <div class="results-container" id="resultsContainer">
+                {% for song in results %}
+                <div class="song-card">
+                    <img src="{{ song.image }}" alt="{{ song.title }} cover" class="song-image" onerror="this.onerror=null;this.src='https://placehold.co/100x100/A8D8F0/ffffff?text=No+Image';">
+                    <div class="song-details">
+                        <h2 class="song-title">{{ song.title }}</h2>
+                        <p class="song-subtitle">{{ song.subtitle }}</p>
+                        <div class="song-meta">
+                            {% if song.language %}<span>{{ song.language|capitalize }}</span>{% endif %}
+                            {% if song.year %}<span>{{ song.year }}</span>{% endif %}
+                        </div>
+                        <div class="song-actions">
+                            <button class="play-btn" data-song-id="{{ song.id }}" data-song-title="{{ song.title }}" data-song-artist="{{ song.subtitle }}">Play</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% elif query %}
+            <div class="no-results">
+                <h2>No results found for "{{ query }}"</h2>
+                <p>Please try a different search query.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="audio-player" id="audioPlayer">
+        <div class="player-info">
+            <div class="player-title" id="playerTitle">Song Title</div>
+            <div class="player-artist" id="playerArtist">Artist</div>
+        </div>
+        <audio controls id="audioElement">
+            Your browser does not support the audio element.
+        </audio>
+        <button class="close-player" onclick="closePlayer()">×</button>
+    </div>
+
+    <script>
+        // Get references to all necessary DOM elements
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsList = document.getElementById('suggestions');
+        const loading = document.getElementById('loading');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioElement = document.getElementById('audioElement');
+        const playerTitle = document.getElementById('playerTitle');
+        const playerArtist = document.getElementById('playerArtist');
+        const resultsContainer = document.getElementById('resultsContainer');
+        
+        let debounceTimeout;
+
+        // Function to show the loading spinner
+        function showLoading() {
+            loading.classList.add('show');
+            if (resultsContainer) {
+                resultsContainer.style.display = 'none';
+            }
+        }
+
+        // Function to hide the loading spinner
+        function hideLoading() {
+            loading.classList.remove('show');
+        }
+
+        // Handle form submission to show loading spinner
+        searchForm.addEventListener('submit', () => {
+            showLoading();
+        });
+        
+        // Function to play a song
+        async function playSong(songId, title, artist) {
+            showLoading();
+            try {
+                const response = await fetch(`/api/stream/${songId}`);
+                const data = await response.json();
+                
+                if (data.stream_url) {
+                    audioElement.src = data.stream_url;
+                    playerTitle.textContent = title;
+                    playerArtist.textContent = artist;
+                    audioPlayer.classList.add('show');
+                    audioElement.play();
+                } else {
+                    console.error('Streaming URL not found:', data.error);
+                }
+            } catch (error) {
+                console.error('Error fetching streaming URL:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Add event listener to the results container for play buttons
+        if (resultsContainer) {
+            resultsContainer.addEventListener('click', (event) => {
+                const playBtn = event.target.closest('.play-btn');
+                if (playBtn) {
+                    const songId = playBtn.dataset.songId;
+                    const title = playBtn.dataset.songTitle;
+                    const artist = playBtn.dataset.songArtist;
+                    playSong(songId, title, artist);
+                }
+            });
+        }
+
+        // Function to close the audio player
+        function closePlayer() {
+            audioElement.pause();
+            audioElement.src = '';
+            audioPlayer.classList.remove('show');
+        }
+        
+        // Function to fetch and display search suggestions
+        async function fetchSuggestions(query) {
+            if (query.length < 2) {
+                suggestionsList.innerHTML = '';
+                suggestionsList.classList.remove('show');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    displaySuggestions(data.results);
+                } else {
+                    suggestionsList.innerHTML = '';
+                    suggestionsList.classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Error fetching suggestions:', error);
+            }
+        }
+        
+        // Function to render suggestions in the dropdown
+        function displaySuggestions(results) {
+            suggestionsList.innerHTML = '';
+            
+            // Display a limited number of suggestions to keep it clean
+            results.slice(0, 5).forEach(song => {
+                const item = document.createElement('div');
+                item.classList.add('suggestion-item');
+                item.textContent = `${song.title} - ${song.subtitle}`;
+                item.addEventListener('click', () => {
+                    // Set the input value to the clicked suggestion and submit the form
+                    searchInput.value = song.title;
+                    searchForm.submit();
+                });
+                suggestionsList.appendChild(item);
+            });
+            
+            suggestionsList.classList.add('show');
+        }
+        
+        // Add event listener for real-time suggestions on input
+        searchInput.addEventListener('input', (event) => {
+            clearTimeout(debounceTimeout);
+            const query = event.target.value.trim();
+            
+            // Add a small delay (debounce) to prevent excessive API calls
+            debounceTimeout = setTimeout(() => {
+                if (query.length > 1) {
+                    fetchSuggestions(query);
+                } else {
+                    suggestionsList.innerHTML = '';
+                    suggestionsList.classList.remove('show');
+                }
+            }, 300);
+        });
+        
+        // Hide suggestions when clicking outside the search area
+        document.addEventListener('click', (event) => {
+            if (!searchForm.contains(event.target)) {
+                suggestionsList.classList.remove('show');
+            }
+        });
+
+    </script>
+</body>
+</html>
